@@ -1,0 +1,1 @@
+The analysis folder contains code for data processing and visualization. The Holocene records folder holds the compiled Holocene record datasets. The modern records at the Holocene record sites folder includes modern observational data, but only for sites where Holocene records exist.
