@@ -34,7 +34,7 @@ if strcmp(cv.ClimateVariable{i},'temp') && strcmp(cvd.ClimateVariableDetail{i},'
 end
 end
 
-load('./ modern records at the Holocene record sites/sat_p.mat')
+load('./modern records at the Holocene record sites/sat_p.mat')
 
 wj={'alaska-yukon-v2.xls','canadian-islands-greenland-v2.xls','fennoscandia-v2.xls','mainland-canada-v2.xls',...
     'north-atlantic-iceland-v2.xls','russian-arctic-v2.xls'};
@@ -73,20 +73,20 @@ for i=1:length(name)
     end
 
     mSheets = sheets(id);
-    table=readtable([path,wjm],'Sheet',mSheets);
+    proxy_tbl=readtable([path,wjm],'Sheet',mSheets);
 
     m=1;
-    for j=1:length(table.Properties.VariableNames)
-    if contains(table.Properties.VariableNames{j},["MTCO","MTWA","Temperature"],'IgnoreCase',true)...
-        && ~contains(table.Properties.VariableNames{j},"error",'IgnoreCase', true)
-        sat_h{i,m}=table2array(table(:,j));
+    for j=1:length(proxy_tbl.Properties.VariableNames)
+    if contains(proxy_tbl.Properties.VariableNames{j},["MTCO","MTWA","Temperature"],'IgnoreCase',true)...
+        && ~contains(proxy_tbl.Properties.VariableNames{j},"error",'IgnoreCase', true)
+        sat_h{i,m}=table2array(proxy_tbl(:,j));
     
     for k=1:j-1
-    if contains(table.Properties.VariableNames{j-k},'age','IgnoreCase',true)
+    if contains(proxy_tbl.Properties.VariableNames{j-k},'age','IgnoreCase',true)
         if strcmp(name{i},'tornetrask')
-        age{i,m}=table2array(table(:,j-k-1));
+        age{i,m}=table2array(proxy_tbl(:,j-k-1));
         else    
-        age{i,m}=table2array(table(:,j-k));
+        age{i,m}=table2array(proxy_tbl(:,j-k));
         end
         break
     end
@@ -163,12 +163,33 @@ mask = notEmpty & notExcluded;
 selected_h = cellfun(@(x) x(:)', sat_h(mask), 'UniformOutput', false);
 data_h = [selected_h{:}];
 
-selected_m = sat_m(mask);
-last20 = cellfun(@(x) x(max(1, end-19):end), selected_m, 'UniformOutput', false);
-data_m_last20 = [last20{:}];
-avg_m = mean(data_m_last20);
+% Modern state: construct one annual composite for each of the latest
+% 20 years. First average multiple records at the same site, then average
+% equally across sites. This is the series used for the mean and +/-1 sigma.
+sat_mod_site_series = [];
+for i = 1:length(name)
+    record_series = [];
+    for j = 1:size(sat_m,2)
+        if mask(i,j) && ~isempty(sat_m{i,j})
+            v = sat_m{i,j}(:)';
+            if numel(v) >= 20
+                record_series = [record_series; v(end-19:end)];
+            end
+        end
+    end
+    if ~isempty(record_series)
+        sat_mod_site_series = [sat_mod_site_series; ...
+            mean(record_series,1,'omitnan')];
+    end
+end
+sat_mod_annual = mean(sat_mod_site_series,1,'omitnan');
+avg_m = mean(sat_mod_annual,'omitnan');
+sat_mod_sigma = std(sat_mod_annual,0,'omitnan');
+sat_mod_sem = sat_mod_sigma ./ sqrt(sum(~isnan(sat_mod_annual)));
 
 p90_sites = [];
+min_sites = [];
+max_sites = [];
 bin_width = 1;
 site_data = cell(length(name),1);
 all_vals_for_edges = [];
@@ -182,6 +203,8 @@ for i = 1:length(name)
     end
     if numel(site_vals) >= 10
         p90_sites = [p90_sites; prctile(site_vals,90)];
+        min_sites = [min_sites; min(site_vals,[],'omitnan')];
+        max_sites = [max_sites; max(site_vals,[],'omitnan')];
         site_data{i} = site_vals;
         all_vals_for_edges = [all_vals_for_edges; site_vals];
 
@@ -190,10 +213,18 @@ for i = 1:length(name)
 end
 p90 = mean(p90_sites,'omitnan');
 
-sat_p90 = p90;        % Holocene/Meghalayan 90% boundary
-sat_mod = avg_m;        % modern last 20-year mean
+% Site-balanced Meghalayan extrema. The pooled extrema below are retained
+% only as quality-control values and are not used in Figure 3.
+sat_megh_min = mean(min_sites,'omitnan');
+sat_megh_max = mean(max_sites,'omitnan');
+sat_megh_pooled_min = min(data_h,[],'omitnan');
+sat_megh_pooled_max = max(data_h,[],'omitnan');
+
+sat_p90 = p90;          % Meghalayan P90 boundary
+sat_mod = avg_m;        % modern 20-year mean
 %% SST: Ocean warming, Atlantic inflow region
-clearvars -except sat_p90 sat_mod
+clearvars -except sat_p90 sat_mod sat_mod_sigma sat_mod_sem ...
+    sat_megh_min sat_megh_max sat_megh_pooled_min sat_megh_pooled_max
 path='./Holocene records/';
 name1 = readtable([path,'tables-1-2-s1-v2.xlsx'],'Sheet','Table 1_sites','Range','A11:A191');
 lat = readtable([path,'tables-1-2-s1-v2.xlsx'],'Sheet','Table 1_sites','Range','D11:D191');
@@ -228,7 +259,7 @@ if strcmp(cv.ClimateVariable{i},'temp') && (strcmp(cvd.ClimateVariableDetail{i},
 end
 end
 
-load('./ modern records at the Holocene record sites/sst_p.mat')
+load('./modern records at the Holocene record sites/sst_p.mat')
 
 wj={'alaska-yukon-v2.xls','canadian-islands-greenland-v2.xls','fennoscandia-v2.xls','mainland-canada-v2.xls',...
     'north-atlantic-iceland-v2.xls','russian-arctic-v2.xls'};
@@ -251,15 +282,15 @@ for i=1:length(name)
     id = contains(sheets_2,x,'IgnoreCase',true);
     mSheets = sheets(id);
     
-    table=readtable([path,wjm],'Sheet',mSheets);
+    proxy_tbl=readtable([path,wjm],'Sheet',mSheets);
     m=1;
-    for j=1:length(table.Properties.VariableNames)
-    if contains(table.Properties.VariableNames{j},["sst","Temperature"],'IgnoreCase',true)
-        sst_h{i,m}=table2array(table(:,j));
+    for j=1:length(proxy_tbl.Properties.VariableNames)
+    if contains(proxy_tbl.Properties.VariableNames{j},["sst","Temperature"],'IgnoreCase',true)
+        sst_h{i,m}=table2array(proxy_tbl(:,j));
     
     for k=1:j-1
-    if contains(table.Properties.VariableNames{j-k},'age','IgnoreCase',true)
-        age{i,m}=table2array(table(:,j-k));
+    if contains(proxy_tbl.Properties.VariableNames{j-k},'age','IgnoreCase',true)
+        age{i,m}=table2array(proxy_tbl(:,j-k));
         break
     end
     end
@@ -355,6 +386,8 @@ data_m_summer = [];
 data_h_winter = [];
 data_m_winter = [];
 p90_sites_summer = [];p90_sites_winter = [];
+min_sites_summer = [];max_sites_summer = [];
+min_sites_winter = [];max_sites_winter = [];
 for i = 1:length(name)
         site_vals_summer = [];site_vals_winter = [];
     if ismember(name{i}, {'GIK23258','JM01-1199','MD95-2011','MSM05-712','PL-96','Troll28-03'})
@@ -397,15 +430,37 @@ for i = 1:length(name)
     end
     if numel(site_vals_summer) >= 10
         p90_sites_summer = [p90_sites_summer; prctile(site_vals_summer,90)];
+        min_sites_summer = [min_sites_summer; min(site_vals_summer,[],'omitnan')];
+        max_sites_summer = [max_sites_summer; max(site_vals_summer,[],'omitnan')];
     end
     if numel(site_vals_winter) >= 10
         p90_sites_winter = [p90_sites_winter; prctile(site_vals_winter,90)];
+        min_sites_winter = [min_sites_winter; min(site_vals_winter,[],'omitnan')];
+        max_sites_winter = [max_sites_winter; max(site_vals_winter,[],'omitnan')];
     end
 end
 
-data_m_summer = mean(data_m_summer, 'all', 'omitnan');
-data_m_winter = mean(data_m_winter, 'all', 'omitnan');
+% The matrices contain one row per site and one column per year.
+sst_mod_annual_summer = mean(data_m_summer,1,'omitnan');
+sst_mod_annual_winter = mean(data_m_winter,1,'omitnan');
+data_m_summer = mean(sst_mod_annual_summer,'omitnan');
+data_m_winter = mean(sst_mod_annual_winter,'omitnan');
+sst_mod_sigma_summer = std(sst_mod_annual_summer,0,'omitnan');
+sst_mod_sigma_winter = std(sst_mod_annual_winter,0,'omitnan');
+sst_mod_sem_summer = sst_mod_sigma_summer ./ ...
+    sqrt(sum(~isnan(sst_mod_annual_summer)));
+sst_mod_sem_winter = sst_mod_sigma_winter ./ ...
+    sqrt(sum(~isnan(sst_mod_annual_winter)));
 p90_summer = mean(p90_sites_summer,'omitnan');p90_winter = mean(p90_sites_winter,'omitnan');
+
+sst_megh_min_summer = mean(min_sites_summer,'omitnan');
+sst_megh_max_summer = mean(max_sites_summer,'omitnan');
+sst_megh_min_winter = mean(min_sites_winter,'omitnan');
+sst_megh_max_winter = mean(max_sites_winter,'omitnan');
+sst_megh_pooled_min_summer = min(data_h_summer,[],'omitnan');
+sst_megh_pooled_max_summer = max(data_h_summer,[],'omitnan');
+sst_megh_pooled_min_winter = min(data_h_winter,[],'omitnan');
+sst_megh_pooled_max_winter = max(data_h_winter,[],'omitnan');
 
 
 sst_p90_summer = p90_summer;
@@ -415,7 +470,14 @@ sst_p90_winter = p90_winter;
 sst_mod_winter = data_m_winter;
 
 %% SSS: Freshwater accumulation, Pacific sector
-clearvars -except sat_p90 sat_mod sst_p90_winter sst_mod_winter sst_p90_summer sst_mod_summer
+clearvars -except sat_p90 sat_mod sat_mod_sigma sat_mod_sem ...
+    sat_megh_min sat_megh_max sat_megh_pooled_min sat_megh_pooled_max ...
+    sst_p90_winter sst_mod_winter sst_mod_sigma_winter sst_mod_sem_winter ...
+    sst_megh_min_winter sst_megh_max_winter ...
+    sst_p90_summer sst_mod_summer sst_mod_sigma_summer sst_mod_sem_summer ...
+    sst_megh_min_summer sst_megh_max_summer ...
+    sst_megh_pooled_min_summer sst_megh_pooled_max_summer ...
+    sst_megh_pooled_min_winter sst_megh_pooled_max_winter
 path='./Holocene records/';
 name1 = readtable([path,'tables-1-2-s1-v2.xlsx'],'Sheet','Table 1_sites','Range','A11:A191');
 lat = readtable([path,'tables-1-2-s1-v2.xlsx'],'Sheet','Table 1_sites','Range','D11:D191');
@@ -451,7 +513,7 @@ end
 end
 
 
-load('./ modern records at the Holocene record sites/sss_p.mat')
+load('./modern records at the Holocene record sites/sss_p.mat')
 
 
 wj={'alaska-yukon-v2.xls','canadian-islands-greenland-v2.xls','fennoscandia-v2.xls','mainland-canada-v2.xls',...
@@ -472,15 +534,15 @@ for i=1:length(name)
     id = contains(sheets_2,x,'IgnoreCase',true);
     mSheets = sheets(id);
     
-    table=readtable([path,wjm],'Sheet',mSheets);
+    proxy_tbl=readtable([path,wjm],'Sheet',mSheets);
     m=1;
-    for j=1:length(table.Properties.VariableNames)
-    if contains(table.Properties.VariableNames{j},'sss','IgnoreCase',true)
-        sss_h{i,m}=table2array(table(:,j));
+    for j=1:length(proxy_tbl.Properties.VariableNames)
+    if contains(proxy_tbl.Properties.VariableNames{j},'sss','IgnoreCase',true)
+        sss_h{i,m}=table2array(proxy_tbl(:,j));
     
     for k=1:j-1
-    if contains(table.Properties.VariableNames{j-k},'age','IgnoreCase',true)
-        age{i,m}=table2array(table(:,j-k));
+    if contains(proxy_tbl.Properties.VariableNames{j-k},'age','IgnoreCase',true)
+        age{i,m}=table2array(proxy_tbl(:,j-k));
         break
     end
     end
@@ -542,36 +604,48 @@ years_esa   = 2010:2023;
 target_years = 2005:2024;
 
 
-all_vals = cell(12,2);
+% Align the CMEMS and ESA records by year. During overlap years, first
+% average the two products so that each year receives one weight.
+modern_sss_site_annual = cell(length(name),2);
 
-for i = 1:12
+for i = 1:length(name)
     for j = 1:2
         cmems_seq = sss_m_cmems{i,j};
         esa_seq   = sss_m_esa{i,j};
 
+        cmems_vals = nan(1,numel(target_years));
+        esa_vals = nan(1,numel(target_years));
+
         [in_t, loc] = ismember(target_years, years_cmems);
-        cmems_vals = cmems_seq(loc(in_t));
-        all_vals{i,j} = [all_vals{i,j}; cmems_vals(:)]; 
+        cmems_vals(in_t) = cmems_seq(loc(in_t));
 
         [in_t, loc] = ismember(target_years, years_esa);
-        esa_vals = esa_seq(loc(in_t));
-        all_vals{i,j} = [all_vals{i,j}; esa_vals(:)]; 
+        esa_vals(in_t) = esa_seq(loc(in_t));
+
+        modern_sss_site_annual{i,j} = ...
+            mean([cmems_vals; esa_vals],1,'omitnan');
     end
 end
 
 
 data_h = [];
-avg_sss = [];
+sss_mod_site_series = [];
 for i = 1:length(name)
     if ismember(name{i}, {'GGC19','HLC0501','P1B3'})
         data_h = [data_h; sss_h{i,2}];   
-        avg_sss = [avg_sss; all_vals{i,2}]; 
+        sss_mod_site_series = [sss_mod_site_series; ...
+            modern_sss_site_annual{i,2}];
     end
 end
-avg_sss = mean(avg_sss, 'all', 'omitnan');
+sss_mod_annual = mean(sss_mod_site_series,1,'omitnan');
+avg_sss = mean(sss_mod_annual,'omitnan');
+sss_mod_sigma = std(sss_mod_annual,0,'omitnan');
+sss_mod_sem = sss_mod_sigma ./ sqrt(sum(~isnan(sss_mod_annual)));
 
 
 p10_sites = [];
+min_sites = [];
+max_sites = [];
 for i = 1:length(name)
     site_vals = [];
         if ~isempty(sss_h{i,2})&&ismember(name{i}, {'GGC19','HLC0501','P1B3'})
@@ -579,13 +653,64 @@ for i = 1:length(name)
         end
     if numel(site_vals) >= 10
         p10_sites = [p10_sites; prctile(site_vals,10)];
+        min_sites = [min_sites; min(site_vals,[],'omitnan')];
+        max_sites = [max_sites; max(site_vals,[],'omitnan')];
     end
 end
 p10 = mean(p10_sites,'omitnan');
 
+sss_megh_min = mean(min_sites,'omitnan');
+sss_megh_max = mean(max_sites,'omitnan');
+sss_megh_pooled_min = min(data_h,[],'omitnan');
+sss_megh_pooled_max = max(data_h,[],'omitnan');
 
-sss_p10 = p10;        % Holocene 10% boundary
-sss_mod = avg_sss;        % modern last 20-year mean
+sss_p10 = p10;          % Meghalayan P10 boundary
+sss_mod = avg_sss;      % modern 20-year mean
 
-sss_p10_h=sss_p10;sat_p90_h=sat_p90;sst_p90_summer_h=sst_p90_summer;sst_p90_winter_h=sst_p90_winter;
-save('./M_boundaries.mat','sss_p10_h','sat_p90_h','sst_p90_summer_h','sst_p90_winter_h')
+%% Summary and output
+% Descriptive boundary names used by the updated plotting script.
+sat_p90_m = sat_p90;
+sss_p10_m = sss_p10;
+sst_p90_summer_m = sst_p90_summer;
+sst_p90_winter_m = sst_p90_winter;
+
+% Backward-compatible aliases retained for older plotting scripts.
+sat_p90_h = sat_p90_m;
+sss_p10_h = sss_p10_m;
+sst_p90_summer_h = sst_p90_summer_m;
+sst_p90_winter_h = sst_p90_winter_m;
+
+clear table
+Metric = ["AA SAT"; "FA winter SSS"; "OW summer SST"; "OW winter SST"];
+MeghalayanLimit = [sat_p90_m; sss_p10_m; sst_p90_summer_m; sst_p90_winter_m];
+MeghalayanMinimum = [sat_megh_min; sss_megh_min; ...
+    sst_megh_min_summer; sst_megh_min_winter];
+MeghalayanMaximum = [sat_megh_max; sss_megh_max; ...
+    sst_megh_max_summer; sst_megh_max_winter];
+ModernMean = [sat_mod; sss_mod; sst_mod_summer; sst_mod_winter];
+ModernSD = [sat_mod_sigma; sss_mod_sigma; ...
+    sst_mod_sigma_summer; sst_mod_sigma_winter];
+ModernSEM = [sat_mod_sem; sss_mod_sem; ...
+    sst_mod_sem_summer; sst_mod_sem_winter];
+
+MeghalayanSummary = table(Metric,MeghalayanLimit,MeghalayanMinimum, ...
+    MeghalayanMaximum,ModernMean,ModernSD,ModernSEM);
+disp(MeghalayanSummary)
+
+PooledMinimum = [sat_megh_pooled_min; sss_megh_pooled_min; ...
+    sst_megh_pooled_min_summer; sst_megh_pooled_min_winter];
+PooledMaximum = [sat_megh_pooled_max; sss_megh_pooled_max; ...
+    sst_megh_pooled_max_summer; sst_megh_pooled_max_winter];
+MeghalayanPooledQC = table(Metric,PooledMinimum,PooledMaximum);
+disp(MeghalayanPooledQC)
+
+save('./M_boundaries.mat', ...
+    'sat_p90_m','sss_p10_m','sst_p90_summer_m','sst_p90_winter_m', ...
+    'sat_p90_h','sss_p10_h','sst_p90_summer_h','sst_p90_winter_h', ...
+    'sat_megh_min','sat_megh_max','sss_megh_min','sss_megh_max', ...
+    'sst_megh_min_summer','sst_megh_max_summer', ...
+    'sst_megh_min_winter','sst_megh_max_winter', ...
+    'sat_mod','sss_mod','sst_mod_summer','sst_mod_winter', ...
+    'sat_mod_sigma','sss_mod_sigma','sst_mod_sigma_summer','sst_mod_sigma_winter', ...
+    'sat_mod_sem','sss_mod_sem','sst_mod_sem_summer','sst_mod_sem_winter', ...
+    'MeghalayanSummary','MeghalayanPooledQC')

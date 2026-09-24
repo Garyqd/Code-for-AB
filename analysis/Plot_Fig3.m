@@ -1,292 +1,286 @@
+% Run in this order:
+%   1. Calculate_M_boundaries_Fig3
+%   2. Calculate_H_boundaries_Fig3
+%   3. Plot_Fig3
+
 clear
-load('./M_boundaries.mat');load('./H_boundaries.mat');
-%% plotting
+close all
+clc
 
-figure
-set(gcf,'color','white','outerposition',get(0,'screensize'))
-
-% ---------- 1. SAT ----------
-subplot(2,2,1)
-hold on
-box on
-grid on
-
-x = [1 2 3];
-y = [sat_p90_h sat_p90 sat_mod];
-
-scatter(1,sat_p90_h,180,'k','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(2,sat_p90,180,'b','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(3,sat_mod,180,'r','filled','MarkerEdgeColor','k','LineWidth',1.5)
-
-xlim([0.5 3.5])
-xticks([1 2 3])
-xticklabels({'M boundary','H boundary','Modern state'})
-title('(a) Arctic Amplification (summer, >85% Holocene records)','fontsize',23,'fontweight','bold')
-set(gca,'fontsize',20,'linewidth',2,'tickdir','in','gridalpha',0.25)
-ylabel('Surface air temperature [degC]','fontsize',20)
-
-yr = max(y) - min(y);
-if yr == 0
-    yr = max(abs(mean(y))*0.1,1);
+%% Load calculated values
+script_file = mfilename('fullpath');
+if isempty(script_file)
+    script_dir = pwd;
+else
+    script_dir = fileparts(script_file);
 end
-ylim([min(y)-0.25*yr, max(y)+0.25*yr])
 
-text(1,sat_p90_h+0.05,num2str(sat_p90_h,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(2,sat_p90+0.04,num2str(sat_p90,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(3,sat_mod+0.04,num2str(sat_mod,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
+M_file = fullfile(script_dir,'M_boundaries.mat');
+H_file = fullfile(script_dir,'H_boundaries.mat');
 
-ax = gca;
-pos = ax.Position;
-xl = ax.XLim;
-yl = ax.YLim;
-
-x_start = 1.02;
-x_end   = 2.98;
-y_start = y(1) + 0.02*(y(3)-y(1));
-y_end   = y(1) + 0.98*(y(3)-y(1));
-
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
-
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
-
-x_start = 2.02;
-x_end   = 2.98;
-y_start = y(2) + 0.02*(y(3)-y(2));
-y_end   = y(2) + 0.98*(y(3)-y(2));
-
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
-
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
-
-
-% ---------- 2. SSS ----------
-subplot(2,2,2)
-hold on
-box on
-grid on
-
-x = [1 2 3];
-y = [-sss_p10_h -sss_p10 -sss_mod];
-
-scatter(1,-sss_p10_h,180,'k','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(2,-sss_p10,180,'b','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(3,-sss_mod,180,'r','filled','MarkerEdgeColor','k','LineWidth',1.5)
-
-xlim([0.5 3.5])
-xticks([1 2 3])
-xticklabels({'M boundary','H boundary','Modern state'})
-yticks([-31 -30.5 -30 -29.5 -29])
-yticklabels([31 30.5 30 29.5 29])
-ylabel('Sea surface salinity [PSU]','fontsize',20)
-title('(b) Freshwater Accumulation (Pacific sector, winter)','fontsize',23,'fontweight','bold')
-set(gca,'fontsize',20,'linewidth',2,'tickdir','in','gridalpha',0.25)
-
-yr = max(y) - min(y);
-if yr == 0
-    yr = max(abs(mean(y))*0.1,1);
+if ~isfile(M_file)
+    M_file = fullfile(pwd,'M_boundaries.mat');
 end
-ylim([min(y)-0.25*yr, max(y)+0.25*yr])
-
-text(1,-sss_p10_h+0.09,num2str(sss_p10_h,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(2,-sss_p10+0.19,num2str(sss_p10,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(3,-sss_mod+0.07,num2str(sss_mod,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-
-ax = gca;
-pos = ax.Position;
-xl = ax.XLim;
-yl = ax.YLim;
-
-x_start = 1.02;
-x_end   = 2.98;
-y_start = y(1) + 0.02*(y(3)-y(1));
-y_end   = y(1) + 0.98*(y(3)-y(1));
-
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
-
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
-
-
-x_start = 2.02;
-x_end   = 2.98;
-y_start = y(2) + 0.02*(y(3)-y(2));
-y_end   = y(2) + 0.98*(y(3)-y(2));
-
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
-
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
-
-
-% ---------- 3. SST summer ----------
-subplot(2,2,3)
-hold on
-box on
-grid on
-
-x = [1 2 3];
-y = [sst_p90_summer_h sst_p90_summer sst_mod_summer];
-
-scatter(1,sst_p90_summer_h,180,'k','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(2,sst_p90_summer,180,'b','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(3,sst_mod_summer,180,'r','filled','MarkerEdgeColor','k','LineWidth',1.5)
-
-xlim([0.5 3.5])
-xticks([1 2 3])
-xticklabels({'M boundary','H boundary','Modern state'})
-title('(c) Ocean Warming (Atlantic inflow region, summer)','fontsize',23,'fontweight','bold')
-set(gca,'fontsize',20,'linewidth',2,'tickdir','in','gridalpha',0.25)
-ylabel('Sea surface temperature [degC]','fontsize',20)
-
-yr = max(y) - min(y);
-if yr == 0
-    yr = max(abs(mean(y))*0.1,1);
+if ~isfile(H_file)
+    H_file = fullfile(pwd,'H_boundaries.mat');
 end
-ylim([min(y)-0.25*yr, max(y)+0.25*yr])
 
-text(1,sst_p90_summer_h+0.04,num2str(sst_p90_summer_h,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(2,sst_p90_summer+0.03,num2str(sst_p90_summer,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(3,sst_mod_summer+0.03,num2str(sst_mod_summer,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-
-ax = gca;
-pos = ax.Position;
-xl = ax.XLim;
-yl = ax.YLim;
-
-x_start = 1.02;
-x_end   = 2.98;
-y_start = y(1) + 0.02*(y(3)-y(1));
-y_end   = y(1) + 0.98*(y(3)-y(1));
-
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
-
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
-
-x_start = 2.02;
-x_end   = 2.98;
-y_start = y(2) + 0.02*(y(3)-y(2));
-y_end   = y(2) + 0.98*(y(3)-y(2));
-
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
-
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
-
-
-% ---------- 4. SST winter ----------
-subplot(2,2,4)
-hold on
-box on
-grid on
-
-x = [1 2 3];
-y = [sst_p90_winter_h sst_p90_winter sst_mod_winter];
-
-scatter(1,sst_p90_winter_h,180,'k','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(2,sst_p90_winter,180,'b','filled','MarkerEdgeColor','k','LineWidth',1.5)
-scatter(3,sst_mod_winter,180,'r','filled','MarkerEdgeColor','k','LineWidth',1.5)
-
-xlim([0.5 3.5])
-xticks([1 2 3])
-xticklabels({'M boundary','H boundary','Modern state'})
-title('(d) Ocean Warming (Atlantic inflow region, winter)','fontsize',23,'fontweight','bold')
-set(gca,'fontsize',20,'linewidth',2,'tickdir','in','gridalpha',0.25)
-ylabel('Sea surface temperature [degC]','fontsize',20)
-
-yr = max(y) - min(y);
-if yr == 0
-    yr = max(abs(mean(y))*0.1,1);
+if ~isfile(M_file)
+    error(['Cannot find M_boundaries.mat. Run ', ...
+        'Calculate_M_boundaries_Fig3.m before Plot_Fig3.m.'])
 end
-ylim([min(y)-0.25*yr, max(y)+0.25*yr])
+if ~isfile(H_file)
+    error(['Cannot find H_boundaries.mat. Run ', ...
+        'Calculate_H_boundaries_Fig3.m before Plot_Fig3.m.'])
+end
 
-text(1,sst_p90_winter_h+0.08,num2str(sst_p90_winter_h,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(2,sst_p90_winter+0.07,num2str(sst_p90_winter,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
-text(3,sst_mod_winter+0.07,num2str(sst_mod_winter,'%.2f'), ...
-    'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',18)
+M = load(M_file);
+H = load(H_file);
 
-ax = gca;
-pos = ax.Position;
-xl = ax.XLim;
-yl = ax.YLim;
+%% Assemble the values used in the four panels
+M_limit = [M.sat_p90_m,M.sss_p10_m, ...
+    M.sst_p90_summer_m,M.sst_p90_winter_m];
+M_extreme = [M.sat_megh_max,M.sss_megh_min, ...
+    M.sst_megh_max_summer,M.sst_megh_max_winter];
 
-x_start = 1.02;
-x_end   = 2.98;
-y_start = y(1) + 0.02*(y(3)-y(1));
-y_end   = y(1) + 0.98*(y(3)-y(1));
+H_limit = [H.sat_p90_hol,H.sss_p10_hol, ...
+    H.sst_p90_summer_hol,H.sst_p90_winter_hol];
+H_extreme = [H.sat_hol_max,H.sss_hol_min, ...
+    H.sst_hol_max_summer,H.sst_hol_max_winter];
 
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
+modern = [H.sat_mod,H.sss_mod,H.sst_mod_summer,H.sst_mod_winter];
+modern_sd = [H.sat_mod_sigma,H.sss_mod_sigma, ...
+    H.sst_mod_sigma_summer,H.sst_mod_sigma_winter];
 
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
+expected_M_limit = [11.031,31.003,8.3663,2.0677];
+expected_M_extreme = [11.686,30.226,9.5247,2.7214];
+expected_H_limit = [12.113,30.863,9.0450,2.7009];
+expected_H_extreme = [13.655,28.365,10.500,3.4279];
+expected_modern = [12.351,29.062,9.2759,3.9116];
+expected_sd = [0.78063,0.23354,0.46139,0.28660];
 
-x_start = 2.02;
-x_end   = 2.98;
-y_start = y(2) + 0.02*(y(3)-y(2));
-y_end   = y(2) + 0.98*(y(3)-y(2));
+check_names = {'Meghalayan limits','Meghalayan extrema', ...
+    'Full-Holocene limits','Full-Holocene extrema', ...
+    'Modern means','Modern SD'};
+actual_values = {M_limit,M_extreme,H_limit,H_extreme,modern,modern_sd};
+expected_values = {expected_M_limit,expected_M_extreme, ...
+    expected_H_limit,expected_H_extreme,expected_modern,expected_sd};
 
-x_start_n = pos(1) + (x_start - xl(1)) / (xl(2)-xl(1)) * pos(3);
-x_end_n   = pos(1) + (x_end   - xl(1)) / (xl(2)-xl(1)) * pos(3);
-y_start_n = pos(2) + (y_start - yl(1)) / (yl(2)-yl(1)) * pos(4);
-y_end_n   = pos(2) + (y_end   - yl(1)) / (yl(2)-yl(1)) * pos(4);
+value_tolerance = 0.02;
+for ii = 1:numel(check_names)
+    value_difference = abs(actual_values{ii}-expected_values{ii});
+    if any(value_difference > value_tolerance)
+        warning('%s differ from the final Figure 3 values; maximum difference = %.4g.', ...
+            check_names{ii},max(value_difference))
+    end
+end
 
-annotation('arrow', [x_start_n x_end_n], [y_start_n y_end_n], ...
-    'Color',[0.45 0.45 0.45], ...
-    'LineWidth',2, ...
-    'HeadLength',10, ...
-    'HeadWidth',10);
+%% Figure style
+blue = [47,111,176]./255;
+blue_text = [36,90,146]./255;
+blue_fill = [234,242,251]./255;
+red = [216,63,66]./255;
+red_text = [175,85,85]./255;
+red_fill = [252,232,232]./255;
+ink = [32,32,32]./255;
+gray = [89,89,89]./255;
+grid_color = [223,226,229]./255;
+font_name = 'Arial';
+
+panel_title = {'(a) Arctic amplification', ...
+    '(b) Freshwater accumulation', ...
+    '(c) Ocean warming', ...
+    '(d) Ocean warming'};
+panel_subtitle = {'Warm-season composite (>85% records)', ...
+    'Pacific sector, winter', ...
+    'Atlantic inflow region, summer', ...
+    'Atlantic inflow region, winter'};
+y_label = {'Surface air temperature (°C)', ...
+    'Sea surface salinity (PSU)', ...
+    'Sea surface temperature (°C)', ...
+    'Sea surface temperature (°C)'};
+unit_name = {'°C','PSU','°C','°C'};
+tail_name = {'max','min','max','max'};
+
+y_limits = [10.5,14.0; ...
+            28.0,31.4; ...
+             8.0,10.8; ...
+             1.5, 4.5];
+y_ticks = {10.5:0.5:14.0,28.0:0.5:31.0, ...
+    8.0:0.5:10.5,1.5:0.5:4.5};
+
+axes_position = [0.09,0.58,0.38,0.30; ...
+                 0.57,0.58,0.38,0.30; ...
+                 0.09,0.20,0.38,0.30; ...
+                 0.57,0.20,0.38,0.30];
+
+fig = figure('Color','w','Units','pixels', ...
+    'Position',[60,40,1280,960],'Renderer','painters');
+
+%% Draw the four panels
+for k = 1:4
+    ax = axes('Parent',fig,'Position',axes_position(k,:));
+    hold(ax,'on')
+    box(ax,'on')
+
+    ax.Layer = 'top';
+    ax.Color = [0.992,0.992,0.996];
+    ax.FontName = font_name;
+    ax.FontSize = 11.5;
+    ax.LineWidth = 1.15;
+    ax.TickDir = 'out';
+    ax.XLim = [0,1];
+    ax.YLim = y_limits(k,:);
+    ax.YTick = y_ticks{k};
+    ax.XTick = [];
+    ax.YGrid = 'on';
+    ax.XGrid = 'off';
+    ax.GridColor = grid_color;
+    ax.GridAlpha = 1;
+
+    tail_width = 0.045;
+
+    H_tail_bottom = min(H_limit(k),H_extreme(k));
+    H_tail_height = abs(H_extreme(k)-H_limit(k));
+    rectangle(ax,'Position',[0.43,H_tail_bottom,tail_width,H_tail_height], ...
+        'FaceColor',red_fill,'EdgeColor',red,'LineWidth',0.9)
+
+    M_tail_bottom = min(M_limit(k),M_extreme(k));
+    M_tail_height = abs(M_extreme(k)-M_limit(k));
+    rectangle(ax,'Position',[0.51,M_tail_bottom,tail_width,M_tail_height], ...
+        'FaceColor',blue_fill,'EdgeColor',blue,'LineWidth',0.9)
+
+    % Thin lines: means of the site-specific extrema.
+    plot(ax,[0,1],[H_extreme(k),H_extreme(k)],'-', ...
+        'Color',red,'LineWidth',0.9)
+    plot(ax,[0,1],[M_extreme(k),M_extreme(k)],'-', ...
+        'Color',blue,'LineWidth',0.9)
+
+    % Thick lines: P90 temperature or P10 salinity boundary limits.
+    plot(ax,[0,1],[M_limit(k),M_limit(k)],'-', ...
+        'Color',blue,'LineWidth',2.7)
+    plot(ax,[0,1],[H_limit(k),H_limit(k)],'-', ...
+        'Color',red,'LineWidth',2.7)
+
+    % Modern mean +/-1 standard deviation of the 20 annual composites.
+    errorbar(ax,0.70,modern(k),modern_sd(k),'o', ...
+        'Color',ink,'MarkerFaceColor',ink,'MarkerEdgeColor',ink, ...
+        'MarkerSize',7,'LineWidth',1.6,'CapSize',9)
+
+    range_y = diff(y_limits(k,:));
+    label_gap = 0.025.*range_y;
+
+    text(ax,0.98,M_limit(k)+label_gap, ...
+        sprintf('Meghalayan threshold: %.2f %s',M_limit(k),unit_name{k}), ...
+        'HorizontalAlignment','right','VerticalAlignment','bottom', ...
+        'Color',blue,'FontName',font_name,'FontSize',10.5, ...
+        'FontWeight','bold')
+
+    H_label_offset = label_gap;
+    H_vertical_alignment = 'bottom';
+    if k == 2 || k == 4
+        H_label_offset = -label_gap;
+        H_vertical_alignment = 'top';
+    end
+    text(ax,0.98,H_limit(k)+H_label_offset, ...
+        sprintf('Full-Holocene threshold: %.2f %s',H_limit(k),unit_name{k}), ...
+        'HorizontalAlignment','right', ...
+        'VerticalAlignment',H_vertical_alignment, ...
+        'Color',red,'FontName',font_name,'FontSize',10.5, ...
+        'FontWeight','bold')
+
+    text(ax,0.66,modern(k), ...
+        sprintf('Modern state: %.2f ± %.2f %s', ...
+        modern(k),modern_sd(k),unit_name{k}), ...
+        'HorizontalAlignment','right','VerticalAlignment','middle', ...
+        'Color',ink,'FontName',font_name,'FontSize',10.2, ...
+        'FontWeight','bold')
+
+    if strcmp(tail_name{k},'min')
+        M_extreme_label = sprintf('Meghalayan min: %.2f %s', ...
+            M_extreme(k),unit_name{k});
+        H_extreme_label = sprintf('Full-Holocene min: %.2f %s', ...
+            H_extreme(k),unit_name{k});
+    else
+        M_extreme_label = sprintf('Meghalayan max: %.2f %s', ...
+            M_extreme(k),unit_name{k});
+        H_extreme_label = sprintf('Full-Holocene max: %.2f %s', ...
+            H_extreme(k),unit_name{k});
+    end
+
+    M_extreme_offset = 0.018.*range_y;
+    H_extreme_offset = 0.018.*range_y;
+    if k == 2
+        M_extreme_offset = -0.060.*range_y;
+        H_extreme_offset = 0.020.*range_y;
+    elseif k == 4
+        M_extreme_offset = -0.055.*range_y;
+    end
+
+    text(ax,0.02,M_extreme(k)+M_extreme_offset,M_extreme_label, ...
+        'HorizontalAlignment','left','Color',blue_text, ...
+        'FontName',font_name,'FontSize',9.5, ...
+        'BackgroundColor',[0.99,0.99,0.99])
+    text(ax,0.02,H_extreme(k)+H_extreme_offset,H_extreme_label, ...
+        'HorizontalAlignment','left','Color',red_text, ...
+        'FontName',font_name,'FontSize',9.5, ...
+        'BackgroundColor',[0.99,0.99,0.99])
+
+    ylabel(ax,y_label{k},'FontName',font_name, ...
+        'FontSize',11.5,'Color',gray)
+    title(ax,panel_title{k},'FontName',font_name, ...
+        'FontSize',15,'FontWeight','bold','HorizontalAlignment','left')
+    text(ax,0,1.035,panel_subtitle{k},'Units','normalized', ...
+        'Clipping','off','HorizontalAlignment','left', ...
+        'VerticalAlignment','bottom','FontName',font_name, ...
+        'FontSize',11.5,'Color',gray)
+end
+
+%% Legend
+annotation(fig,'line',[0.12,0.17],[0.115,0.115], ...
+    'Color',blue,'LineWidth',3);
+annotation(fig,'textbox',[0.18,0.098,0.17,0.035], ...
+    'String','Meghalayan threshold','EdgeColor','none', ...
+    'FontName',font_name,'FontSize',13,'Color',ink);
+
+annotation(fig,'line',[0.37,0.42],[0.115,0.115], ...
+    'Color',red,'LineWidth',3);
+annotation(fig,'textbox',[0.43,0.098,0.18,0.035], ...
+    'String','Full-Holocene threshold','EdgeColor','none', ...
+    'FontName',font_name,'FontSize',13,'Color',ink);
+
+annotation(fig,'ellipse',[0.68,0.107,0.012,0.016], ...
+    'FaceColor',ink,'EdgeColor',ink);
+annotation(fig,'textbox',[0.70,0.098,0.18,0.035], ...
+    'String','Modern mean ± 1 SD','EdgeColor','none', ...
+    'FontName',font_name,'FontSize',13,'Color',ink);
+
+annotation(fig,'rectangle',[0.20,0.055,0.018,0.020], ...
+    'FaceColor',blue_fill,'EdgeColor',blue,'LineWidth',1);
+annotation(fig,'textbox',[0.225,0.046,0.14,0.035], ...
+    'String','Meghalayan tail','EdgeColor','none', ...
+    'FontName',font_name,'FontSize',12.5,'Color',ink);
+
+annotation(fig,'rectangle',[0.39,0.055,0.018,0.020], ...
+    'FaceColor',red_fill,'EdgeColor',red,'LineWidth',1);
+annotation(fig,'textbox',[0.415,0.046,0.15,0.035], ...
+    'String','Full-Holocene tail','EdgeColor','none', ...
+    'FontName',font_name,'FontSize',12.5,'Color',ink);
+
+annotation(fig,'textbox',[0.58,0.041,0.36,0.045], ...
+    'String',['Tail ranges: P90 to maximum (temperature), ', ...
+    'minimum to P10 (salinity)'], ...
+    'EdgeColor','none','FontName',font_name, ...
+    'FontSize',11.5,'Color',gray);
+
+%% Save outputs
+if exist('exportgraphics','file') == 2
+    exportgraphics(fig,fullfile(script_dir,'Figure3_updated.png'), ...
+        'Resolution',600)
+    exportgraphics(fig,fullfile(script_dir,'Figure3_updated.pdf'), ...
+        'ContentType','vector')
+else
+    print(fig,fullfile(script_dir,'Figure3_updated.png'),'-dpng','-r600')
+    print(fig,fullfile(script_dir,'Figure3_updated.pdf'),'-dpdf','-painters')
+end
+savefig(fig,fullfile(script_dir,'Figure3_updated.fig'))
